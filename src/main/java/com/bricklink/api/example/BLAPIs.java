@@ -54,23 +54,11 @@ public class BLAPIs {
                 rd.close();
                 //response from BrickLink
                 JSONObject json = new JSONObject(response.toString());
-//               System.out.println( response.toString()); 
-                
-                //Connection to the database
-                //OracleConnection con = new OracleConnection();
-                //con.connect();
-                
-                //update the database with BrickLink
-                // refreshDatabase(json, con);
-                // con.closeConnection();
-                 
-                 httpConnection.disconnect();
+                httpConnection.disconnect();
                  return json;
                 } 
-        
         catch (Exception e) {
                 e.printStackTrace();
-                //httpConnection.disconnect();
                
               } 
         return null;
@@ -88,50 +76,31 @@ JSONObject brickLinkApiItem(String type, String partNo, String color_id, String 
         
         try {
             HttpURLConnection httpConnection ;
-           // URL finalUrl = new URL(auth.getUrl()+ "&color_id="+color_id+"&guide_type="+guide_type+"&new_or_used="+new_or_used+"&country_code="+country_code+"&region="+region);
-           // System.out.println("base url: " + auth.getBaseUrl());
             System.out.println("Url: "+ auth.getUrl() );
-             System.out.println();
-           // System.out.println("getAuth10: "+ auth.getAuth10());
-         
-           
-           
+            System.out.println();
             httpConnection = (HttpsURLConnection)auth.getUrl().openConnection();
-            
-            
             httpConnection.setRequestMethod("GET");
-            
-             
-             
-             InputStream is = httpConnection.getInputStream();
-             
-                BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-                StringBuilder response = new StringBuilder(); // or StringBuffer if Java version 5+
-                String line;
-                while ((line = rd.readLine()) != null) {
+            InputStream is = httpConnection.getInputStream();
+            BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+            StringBuilder response = new StringBuilder(); // or StringBuffer if Java version 5+
+            String line;
+            while ((line = rd.readLine()) != null) {
                   response.append(line);
                   response.append('\r');
-                }
-                rd.close();
+            }
+            rd.close();
                 //response from BrickLink
                 JSONObject json = new JSONObject(response.toString());
                System.out.println("JSON Response : " + response.toString()); 
                  System.out.println();
-                //Connection to the database
-                //OracleConnection con = new OracleConnection();
-                //con.connect();
                 
-                //update the database with BrickLink
-                // refreshDatabase(json, con);
-                // con.closeConnection();
-                 
-                 httpConnection.disconnect();
-                 return json;
+             httpConnection.disconnect();
+             return json;
                 } 
         catch (Exception e) {
                 e.printStackTrace();
                 //httpConnection.disconnect();
-               
+         
               } 
             
       return null;
