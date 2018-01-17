@@ -106,6 +106,140 @@ JSONObject brickLinkApiItem(String type, String partNo, String color_id, String 
       return null;
     }
 
+JSONObject getColors()
+        
+{
+        auth.setBaseUrl("https://api.bricklink.com/api/store/v1/colors");
+        HttpURLConnection httpConnection = null;
+        try {
+            System.out.println("Url: "+ auth.getUrl() );
+            System.out.println();
+            httpConnection = (HttpsURLConnection)auth.getUrl().openConnection();
+            httpConnection.setRequestMethod("GET");
+            InputStream is = httpConnection.getInputStream();
+            BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+            StringBuilder response = new StringBuilder(); // or StringBuffer if Java version 5+
+            String line;
+            while ((line = rd.readLine()) != null) {
+                  response.append(line);
+                  response.append('\r');
+            }
+            rd.close();
+            //response from BrickLink
+                JSONObject json = new JSONObject(response.toString());
+               System.out.println("JSON Response : " + response.toString()); 
+             httpConnection.disconnect();
+             return json;
+                } 
+        catch (Exception e) {
+                e.printStackTrace();
+                httpConnection.disconnect();
+
+              } 
+            
+      return null;
+}
+
+JSONObject getCategories()        
+{
+        auth.setBaseUrl("https://api.bricklink.com/api/store/v1/categories");
+        HttpURLConnection httpConnection = null;
+        try {
+            System.out.println("Url: "+ auth.getUrl() );
+            System.out.println();
+            httpConnection = (HttpsURLConnection)auth.getUrl().openConnection();
+            httpConnection.setRequestMethod("GET");
+            InputStream is = httpConnection.getInputStream();
+            BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+            StringBuilder response = new StringBuilder(); // or StringBuffer if Java version 5+
+            String line;
+            while ((line = rd.readLine()) != null) {
+                  response.append(line);
+                  response.append('\r');
+            }
+            rd.close();
+            //response from BrickLink
+                JSONObject json = new JSONObject(response.toString());
+               System.out.println("JSON Response : " + response.toString()); 
+             httpConnection.disconnect();
+             return json;
+                } 
+        catch (Exception e) {
+                e.printStackTrace();
+                httpConnection.disconnect();
+
+              } 
+            
+      return null;
+}
+
+JSONObject getKnownColors(String type, String item_id)        
+{
+        auth.setBaseUrl("https://api.bricklink.com/api/store/v1/items/" + type+ "/" + item_id + "/colors");
+        HttpURLConnection httpConnection = null;
+        try {
+            System.out.println("Url: "+ auth.getUrl() );
+            System.out.println();
+            httpConnection = (HttpsURLConnection)auth.getUrl().openConnection();
+            httpConnection.setRequestMethod("GET");
+            InputStream is = httpConnection.getInputStream();
+            BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+            StringBuilder response = new StringBuilder(); // or StringBuffer if Java version 5+
+            String line;
+            while ((line = rd.readLine()) != null) {
+                  response.append(line);
+                  response.append('\r');
+            }
+            rd.close();
+            //response from BrickLink
+                JSONObject json = new JSONObject(response.toString());
+               System.out.println("JSON Response : " + response.toString()); 
+             httpConnection.disconnect();
+             return json;
+                } 
+        catch (Exception e) {
+                e.printStackTrace();
+                httpConnection.disconnect();
+
+              } 
+            
+      return null;
+}
+
+JSONObject getItem(String part_id, String type)
+        
+{
+        auth.setBaseUrl("https://api.bricklink.com/api/store/v1/items/" +  type + "/" + part_id );
+        HttpURLConnection httpConnection = null;
+        try {
+            System.out.println("Url: "+ auth.getUrl() );
+            System.out.println();
+            httpConnection = (HttpsURLConnection)auth.getUrl().openConnection();
+            httpConnection.setRequestMethod("GET");
+            InputStream is = httpConnection.getInputStream();
+            BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+            StringBuilder response = new StringBuilder(); // or StringBuffer if Java version 5+
+            String line;
+            while ((line = rd.readLine()) != null) {
+                  response.append(line);
+                  response.append('\r');
+            }
+            rd.close();
+            //response from BrickLink
+                JSONObject json = new JSONObject(response.toString());
+               System.out.println("JSON Response : " + response.toString()); 
+             httpConnection.disconnect();
+             return json;
+                } 
+        catch (Exception e) {
+                e.printStackTrace();
+                httpConnection.disconnect();
+
+              } 
+            
+      return null;
+}
+
 }
  
  

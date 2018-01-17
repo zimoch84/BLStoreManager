@@ -26,12 +26,14 @@ public class OracleAPIs {
     
     
 
-    public OracleAPIs(OracleConnection oracleConnection) {
-        this.oracleConnection = oracleConnection;
-    }
+public OracleAPIs() {
+    this.oracleConnection =   new OracleConnection();
+}
 
 
-    void refreshInventoryDatabase(JSONObject json){
+void refreshInventoryDatabase(JSONObject json){
+        oracleConnection.connect();
+    
         for(int i=0; i<json.getJSONArray("data").length(); i++){
             int inventory_id = json.getJSONArray("data").getJSONObject(i).getInt("inventory_id");
                 String part_id = json.getJSONArray("data").getJSONObject(i).getJSONObject("item").getString("no");
@@ -94,163 +96,304 @@ public class OracleAPIs {
         }
     }
     
-    HashMap setPricesByInventory(BLAPIs blapis){
-        
-        String custom_guide_type= "stock";  //stock or sold
-        String custom_new_or_used = "U"; //U-used, N-new
-        String custom_country ="PL";
-        String custom_region= "EU";
-        float vo_PRICE_ID=0;
-        JSONObject json;
-        int countFailConnection=0;
-        int maxAttemptsToConnect=500;
-        int count_price=0;
-        int count_price_detail=0;
-        int count_connections=0;
-        //get all data about INVENTORY from Oracle Database
-        
-        String querySelectAllInventory = "select * from inventory i where \n" +
-"not exists \n" +
-"(select 1 from price p where p.part_id like i.part_id and p.color_id = i.color_id)\n" ;//+
-//"\n" +
-//"and rownum < 500";
-        
-      //  querySelectAllInventory = "select * from inventory where id between 10 and 15";
-        
-        ResultSet rs=oracleConnection.sendRequest(querySelectAllInventory);
-        try {
-            while (rs.next()) {
-                
-                count_price++;
-                int invID = rs.getInt("ID");
-                int invInventoryID = rs.getInt("INVENTORY_ID");
-                String invPartID = rs.getString("PART_ID");
-                String invName =  rs.getString("NAME");       
-                String invType = rs.getString("TYPE"); 
-                int invCategoryID = rs.getInt("CATEGORY_ID"); 
-                String invColorName = rs.getString("COLOR_NAME"); 
-                int invQuantity = rs.getInt("QUANTITY");       
-                String invNewUsed =  rs.getString("NEW_OR_USED");
-                String invUnitPrice = rs.getString("UNIT_PRICE");         
-                int invBulk = rs.getInt("BULK");  
-                String invIsRetain = rs.getString("IS_RETAIN");        
-                String invIsStocRoom = rs.getString("IS_STOCK_ROOM");        
-                String invMyCost = rs.getString("MY_COST");       
-                int invSaleRate = rs.getInt("SALE_RATE");        
-                int invColorID = rs.getInt("COLOR_ID");
-                
-                while(true){
-            //get price information from BrickLink based on PartId and other..   
-                    json = blapis.brickLinkApiItem(invType, invPartID, String.valueOf(invColorID), custom_guide_type, custom_new_or_used, custom_country, custom_region);
-                    count_connections++;
-                    if(json.getJSONObject("meta").getInt("code")==200){
-                        break;
-                    }
-                    else {
-                       
-                        countFailConnection++;
-                        System.err.println("ALARM"+countFailConnection); 
-                        System.err.println();
-                        if(countFailConnection==maxAttemptsToConnect)break; 
-                    }
-                }
-                if(countFailConnection==maxAttemptsToConnect)
-                {
-                    return null;
-                }
-//parse json object to readable values  
-                
-                /*  for(int i=0; i<json.getJSONObject("data").getJSONArray("price_detail").length(); i++){
-                            int inventory_id = json.getJSONArray("data").getJSONObject(i).getInt("inventory_id");
-                            String part_id = json.getJSONArray("data").getJSONObject(i).getJSONObject("item").getString("no");
-                            String name = json.getJSONArray("data").getJSONObject(i).getJSONObject("item").getString("name");
-                            String type = json.getJSONArray("data").getJSONObject(i).getJSONObject("item").getString("type");
-                            int category_id = json.getJSONArray("data").getJSONObject(i).getJSONObject("item").getInt("category_id");
-
-                            int color_id = json.getJSONArray("data").getJSONObject(i).getInt("color_id");
-                            String color_name = json.getJSONArray("data").getJSONObject(i).getString("color_name");
-                            int quantity = json.getJSONArray("data").getJSONObject(i).getInt("quantity");
-                            String newUsed = json.getJSONArray("data").getJSONObject(i).getString("new_or_used");
-                            float unit_price = json.getJSONArray("data").getJSONObject(i).getFloat("unit_price");
-                            int bulk = json.getJSONArray("data").getJSONObject(i).getInt("bulk");
-                            boolean is_retain = json.getJSONArray("data").getJSONObject(i).getBoolean("is_retain");
-                            boolean is_stock_room = json.getJSONArray("data").getJSONObject(i).getBoolean("is_stock_room");
-                            float my_cost = json.getJSONArray("data").getJSONObject(i).getFloat("my_cost");
-                            int sale_rate = json.getJSONArray("data").getJSONObject(i).getInt("sale_rate");*/
-
-                //                    System.err.println("inventory_id"+inventory_id+" part_id"+part_id+" name"+name+" type"+type+" category_id"+category_id
-                //                    +" color_name"+color_name+" quantity"+quantity+" newUsed"+newUsed+" unit_price"+unit_price+" bulk"+bulk+
-                //                    " is_retain"+is_retain+" is_stock_room"+is_stock_room+" my_cost"+my_cost+" sale_rate"+sale_rate);
-
-                
-                            JSONObject temp = json.getJSONObject("data");
-                            String bl_new_or_used = temp.getString("new_or_used");
-                            Float bl_max_price = temp.getFloat("max_price");
-                            Float bl_min_price = temp.getFloat("min_price");
-                            Float bl_qty_avg_price = temp.getFloat("qty_avg_price");
-                            int bl_total_quantity = temp.getInt("total_quantity");
-                            Float bl_avg_price = temp.getFloat("avg_price");
-                            String bl_currency_code  = temp.getString("currency_code");
-                            int bl_unit_quantity  = temp.getInt("unit_quantity");
-                            
-                            
-                //make insert to tha PRICE table tru the procedure INSERT_PRICE            
-                            CallableStatement cs = oracleConnection.getConnection().prepareCall("{call INSERT_PRICE(?,?,?,?,?,?,?,?,?,?,?,?,?,?,     ?)}");//14xin 1xout
-                        cs.setString(1, invPartID);
-                        cs.setString(2, invType);
-                            cs.setString(3, bl_new_or_used);
-                            cs.setFloat(4, bl_max_price);
-                            cs.setFloat(5, bl_min_price);
-                            cs.setFloat(6, bl_qty_avg_price);
-                            cs.setInt(7, bl_total_quantity);
-                            cs.setFloat(8, bl_avg_price);
-                            cs.setString(9, bl_currency_code);
-                            cs.setInt(10, bl_unit_quantity);
-                        cs.setFloat(11, invColorID);
-                        cs.setString(12, custom_country);
-                        cs.setString(13, custom_region);
-                        cs.setString(14, custom_guide_type);
-                        cs.registerOutParameter(15, java.sql.Types.FLOAT);
-                            
-                            cs.execute();
-                            
-                         vo_PRICE_ID =   cs.getFloat(15);
-                            cs.close();
-                //getPriceArray and set it in PRICE_BY_SHOP
-                 
-                            JSONArray price_detail = temp.getJSONArray("price_detail");
-                            for(int i=0; i<price_detail.length(); i++){
-                                count_price_detail++;
-                            cs = oracleConnection.getConnection().prepareCall("{call INSERT_PRICE_BY_SHOP(?,?,?,?,?,?,?)}");//7in 
-                            cs.setString(1, invPartID);
-                            cs.setFloat(2, invColorID);
-                            cs.setString(3, custom_country);
-                            cs.setString(4, custom_region);
-                            cs.setString(5, custom_new_or_used);
-                            cs.setString(6, custom_guide_type);
-                            cs.setFloat(7, vo_PRICE_ID);
-                            
-                            cs.execute(); 
-                            cs.close();
-                            
-                            }            
-                           
-                
-                /*
-                System.out.println(invID+"\t" +invInventoryID+"\t" +invPartID+invName+"\t" +invType+"\t" +invCategoryID+"\t" +
-                        invColorName+"\t" +invQuantity+"\t" +invNewUsed+"\t" +invUnitPrice+invBulk+"\t" +invIsRetain+"\t" +
-                        invIsStocRoom+"\t" +invMyCost+"\t" +invSaleRate+"\t" +invColorID + "PRICE_ID"+vo_PRICE_ID);
-*/
-            }
-        } catch (SQLException ex) {
-            Logger.getLogger(OracleAPIs.class.getName()).log(Level.SEVERE, null, ex);
-        }finally {
-        oracleConnection.closeConnection();
-        System.out.println("Added:"+count_price+" items to PRICE TABLE and, "+count_price_detail+" items to PRICE_BY_SHOP, connecting to BLink " + count_connections+ " times");
-        }
-     
+void setPricesByQuerry(String dbQuerry,String custom_guide_type,String custom_new_or_used,
+        String custom_country, String custom_region  )
+{
     
-    return null;
+    BLAPIs blapis = new BLAPIs();
+    oracleConnection.connect();
+
+    float vo_PRICE_ID=0;
+    JSONObject json;
+    int countFailConnection=0;
+    int maxAttemptsToConnect=500;
+    int count_price=0;
+    int count_price_detail=0;
+    int count_connections=0;
+ResultSet rs=oracleConnection.sendRequest(dbQuerry);
+try {
+    while (rs.next()) {
+
+        count_price++;
+        String invPartID = rs.getString("PART_ID");
+        String invType = rs.getString("TYPE"); 
+        int invColorID = rs.getInt("COLOR_ID");
+
+        while(true){
+            //get price information from BrickLink based on PartId and other..   
+            json = blapis.brickLinkApiItem(invType, invPartID, String.valueOf(invColorID), custom_guide_type, custom_new_or_used, custom_country, custom_region);
+            count_connections++;
+            if(json.getJSONObject("meta").getInt("code")==200){
+                break;
+            }
+            else {
+
+                countFailConnection++;
+                System.err.println("ALARM"+countFailConnection); 
+                System.err.println();
+                if(countFailConnection==maxAttemptsToConnect)break; 
+            }
+        }
+        if(countFailConnection==maxAttemptsToConnect)
+        {
+           
+        }
+            JSONObject temp = json.getJSONObject("data");
+            String bl_new_or_used = temp.getString("new_or_used");
+            Float bl_max_price = temp.getFloat("max_price");
+            Float bl_min_price = temp.getFloat("min_price");
+            Float bl_qty_avg_price = temp.getFloat("qty_avg_price");
+            int bl_total_quantity = temp.getInt("total_quantity");
+            Float bl_avg_price = temp.getFloat("avg_price");
+            String bl_currency_code  = temp.getString("currency_code");
+            int bl_unit_quantity  = temp.getInt("unit_quantity");
+
+
+        //make insert to tha PRICE table tru the procedure INSERT_PRICE            
+          CallableStatement cs = oracleConnection.getConnection().prepareCall("{call INSERT_PRICE(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)}");//14xin 1xout
+            cs.setString(1, invPartID);
+            cs.setString(2, invType);
+            cs.setString(3, bl_new_or_used);
+            cs.setFloat(4, bl_max_price);
+            cs.setFloat(5, bl_min_price);
+            cs.setFloat(6, bl_qty_avg_price);
+            cs.setInt(7, bl_total_quantity);
+            cs.setFloat(8, bl_avg_price);
+            cs.setString(9, bl_currency_code);
+            cs.setInt(10, bl_unit_quantity);
+            cs.setFloat(11, invColorID);
+            cs.setString(12, custom_country);
+            cs.setString(13, custom_region);
+            cs.setString(14, custom_guide_type);
+            cs.registerOutParameter(15, java.sql.Types.FLOAT);
+
+            cs.execute();
+
+            vo_PRICE_ID =   cs.getFloat(15);
+            cs.close();
+
+            //getPriceArray and set it in PRICE_BY_SHOP
+
+            JSONArray price_detail = temp.getJSONArray("price_detail");
+            for(int i=0; i<price_detail.length(); i++){
+                count_price_detail++;
+            cs = oracleConnection.getConnection().prepareCall("{call INSERT_PRICE_BY_SHOP(?,?,?,?,?,?,?)}");//7in 
+            cs.setString(1, invPartID);
+            cs.setFloat(2, invColorID);
+            cs.setString(3, custom_country);
+            cs.setString(4, custom_region);
+            cs.setString(5, custom_new_or_used);
+            cs.setString(6, custom_guide_type);
+            cs.setFloat(7, vo_PRICE_ID);
+            cs.execute(); 
+            cs.close();
+                    }            
+        /*
+        System.out.println(invID+"\t" +invInventoryID+"\t" +invPartID+invName+"\t" +invType+"\t" +invCategoryID+"\t" +
+                invColorName+"\t" +invQuantity+"\t" +invNewUsed+"\t" +invUnitPrice+invBulk+"\t" +invIsRetain+"\t" +
+                invIsStocRoom+"\t" +invMyCost+"\t" +invSaleRate+"\t" +invColorID + "PRICE_ID"+vo_PRICE_ID);
+        */
+    }
+} catch (SQLException ex) {
+    Logger.getLogger(OracleAPIs.class.getName()).log(Level.SEVERE, null, ex);
+}finally {
+    oracleConnection.closeConnection();
+     System.out.println("Added:"+count_price+" items to PRICE TABLE and, "
+             + count_price_detail+ " items to PRICE_BY_SHOP, connecting to BLink " 
+             + count_connections+ " times");
+}
+
+}
+    
+void setColors(JSONObject json){
+    
+oracleConnection.connect();
+for(int i=0; i<json.getJSONArray("data").length(); i++){
+    int color_id = json.getJSONArray("data").getJSONObject(i).getInt("color_id");
+    String color_name = json.getJSONArray("data").getJSONObject(i).getString("color_name");
+    String color_type = json.getJSONArray("data").getJSONObject(i).getString("color_type");
+    String query = "INSERT INTO BARTEK.COLORS "
+        + "(ID, NAME, TYPE)"
+        + " VALUES (?,?,?)";
+    try {
+        PreparedStatement ps = oracleConnection.getConnection().prepareStatement(query);
+        ps.setInt(1, color_id);
+        ps.setString(2, color_name);
+        ps.setString(3, color_type);  
+        ps.execute();
+        ps.close();
+    } catch (SQLException ex) {
+        Logger.getLogger(ZimochBricks.class.getName()).log(Level.SEVERE, null, ex);
+    }
+}
+}
+void setCategories(JSONObject json){
+    
+oracleConnection.connect();
+for(int i=0; i<json.getJSONArray("data").length(); i++){
+    int category_id = json.getJSONArray("data").getJSONObject(i).getInt("category_id");
+    String category_name = json.getJSONArray("data").getJSONObject(i).getString("category_name");
+    int parent_id = json.getJSONArray("data").getJSONObject(i).getInt("parent_id");
+    String query = "INSERT INTO BARTEK.CATEGORIES"
+        + "(ID, NAME, PARENT_ID)"
+        + " VALUES (?,?,?)";
+    try {
+        PreparedStatement ps = oracleConnection.getConnection().prepareStatement(query);
+        ps.setInt(1, category_id);
+        ps.setString(2, category_name);
+        ps.setInt(3, parent_id);  
+        ps.execute();
+        ps.close();
+    } catch (SQLException ex) {
+        Logger.getLogger(ZimochBricks.class.getName()).log(Level.SEVERE, null, ex);
+    }
+}
+}
+void setKnownColors(String dbQuerryFromItems){
+
+oracleConnection.connect();
+BLAPIs blAPI = new BLAPIs();
+    
+int countFailConnection=0;
+int maxAttemptsToConnect=500;
+int count_price=0;
+int count_price_detail=0;
+int count_connections=0;
+
+ResultSet rs=oracleConnection.sendRequest(dbQuerryFromItems);
+try {
+    while (rs.next()) {
+    count_price++;
+    String invPartID = rs.getString("PART_ID");
+    String invType = rs.getString("TYPE"); 
+    JSONObject json;
+    while(true){
+        json = blAPI.getKnownColors(invType, invPartID);
+        count_connections++;
+        if(json.getJSONObject("meta").getInt("code")==200){
+            break;
+        }
+        else if (json.getJSONObject("meta").getInt("code")==404)
+        {
+         System.err.println(json.getJSONObject("meta").toString());
+        }
+        
+        else {
+            countFailConnection++;
+            System.err.println("ALARM"+countFailConnection); 
+            if(countFailConnection==maxAttemptsToConnect) return; 
+        }
+        }
+
+    for(int i=0; i<json.getJSONArray("data").length(); i++){
+       int color_id = json.getJSONArray("data").getJSONObject(i).getInt("color_id");
+       int quantity = json.getJSONArray("data").getJSONObject(i).getInt("quantity");
+
+    String query = "INSERT INTO BARTEK.KNOWNCOLORS "
+        + "(PART_ID, COLOR_ID, QUANTITY)"
+        + " VALUES (?,?,?)";
+    try {
+        PreparedStatement ps = oracleConnection.getConnection().prepareStatement(query);
+        ps.setString(1,invPartID ); 
+        ps.setInt(2, color_id);
+        ps.setInt(3, quantity);
+        ps.execute();
+        ps.close();
+    } catch (SQLException ex) {
+        Logger.getLogger(ZimochBricks.class.getName()).log(Level.SEVERE, null, ex);
     }
     
+ }
+}
+} catch (SQLException ex) {
+    Logger.getLogger(OracleAPIs.class.getName()).log(Level.SEVERE, null, ex);
+}finally {
+    oracleConnection.closeConnection();
+     System.out.println("Added:"+count_price+" items to PRICE TABLE and, "
+             + count_price_detail+ " items to PRICE_BY_SHOP, connecting to BLink " 
+             + count_connections+ " times");
+}
+}
+void setItems(String dbQuerryFromItems){
+
+oracleConnection.connect();
+BLAPIs blAPI = new BLAPIs();
+    
+int countFailConnection=0;
+int maxAttemptsToConnect=500;
+int count_price=0;
+int count_price_detail=0;
+int count_connections=0;
+
+ResultSet rs=oracleConnection.sendRequest(dbQuerryFromItems);
+try {
+    while (rs.next()) {
+    count_price++;
+    String invPartID = rs.getString("PART_ID");
+    String invType = rs.getString("TYPE"); 
+    JSONObject json;
+    while(true){
+        json = blAPI.getItem(invPartID, invType );
+        count_connections++;
+        if(json.getJSONObject("meta").getInt("code")==200){
+            break;
+        }
+        else if (json.getJSONObject("meta").getInt("code")==404)
+        {
+         System.err.println(json.getJSONObject("meta").toString());
+        }
+        
+        else {
+            countFailConnection++;
+            System.err.println("ALARM"+countFailConnection); 
+            if(countFailConnection==maxAttemptsToConnect) return; 
+        }
+        }
+    json = json.getJSONObject("data");
+    String name = json.getString("name");
+    int category_id = json.getInt("category_id");
+    String image_url = json.getString("image_url");
+    String thumbnail_url = json.getString("thumbnail_url");
+    float weight = json.getFloat("weight");
+    float dim_x = json.getFloat("dim_x");
+    float dim_y = json.getFloat("dim_y");
+    float dim_z = json.getFloat("dim_z");
+            
+        CallableStatement cs = oracleConnection.getConnection().
+        prepareCall("{call ITEMS_TAPI.INS(?,?,?,?,?,?,?,?,?,?)}");
+      
+   
+        
+        cs.setInt(1, category_id);
+              cs.setFloat(2, dim_x);
+        cs.setFloat(3, dim_y);
+        cs.setString(4, image_url);
+        cs.setFloat(5, dim_z);
+        cs.setString(6, thumbnail_url);
+        cs.setFloat(7, weight);
+         cs.setString(8, invType);
+        cs.setString(9, invPartID);
+        cs.setString(10, name);
+       
+        
+  
+        
+        
+        
+        
+        cs.execute();
+        cs.close();
+        
+    
+    }
+} catch (SQLException ex) {
+    Logger.getLogger(OracleAPIs.class.getName()).log(Level.SEVERE, null, ex);
+}finally {
+    oracleConnection.closeConnection();
+     System.out.println("Added:"+count_price+" items to PRICE TABLE and, "
+             + count_price_detail+ " items to PRICE_BY_SHOP, connecting to BLink " 
+             + count_connections+ " times");
+}
+}
+
 }
