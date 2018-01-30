@@ -11,7 +11,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.json.JSONArray;
@@ -350,41 +349,137 @@ try {
         }
         }
     json = json.getJSONObject("data");
-    String name = json.getString("name");
-    int category_id = json.getInt("category_id");
-    String image_url = json.getString("image_url");
-    String thumbnail_url = json.getString("thumbnail_url");
-    float weight = json.getFloat("weight");
-    float dim_x = json.getFloat("dim_x");
-    float dim_y = json.getFloat("dim_y");
-    float dim_z = json.getFloat("dim_z");
+    
+    String name ;
+    int category_id;
+    String image_url ;
+    String thumbnail_url ;
+    float weight  ;
+    float dim_x  ;
+    float dim_y  ;
+    float dim_z ;
+    
+    
+    
+    try{
+     name = json.getString("name");
+    category_id = json.getInt("category_id");
+     image_url = json.getString("image_url");
+     thumbnail_url = json.getString("thumbnail_url");
+    weight = json.getFloat("weight");
+    dim_x = json.getFloat("dim_x");
+    dim_y = json.getFloat("dim_y");
+    dim_z = json.getFloat("dim_z");
+    }
+    catch (Exception ex){
+        System.err.println("Error przy czytaniu pól json");
+        
+        continue;
+    
+    }
+    Integer year = new Integer(0);
+    if(invType.equals("SET")  )
+    {
+         year = json.getInt("year_released");
+    } 
             
         CallableStatement cs = oracleConnection.getConnection().
-        prepareCall("{call ITEMS_TAPI.INS(?,?,?,?,?,?,?,?,?,?)}");
-      
-   
+        prepareCall("{call ITEMS_TAPI.INS(?,?,?,?,?,?,?,?,?,?,?)}");
         
         cs.setInt(1, category_id);
-              cs.setFloat(2, dim_x);
+        cs.setFloat(2, dim_x);
         cs.setFloat(3, dim_y);
-        cs.setString(4, image_url);
-        cs.setFloat(5, dim_z);
-        cs.setString(6, thumbnail_url);
+        cs.setFloat(4, dim_z);
+        cs.setString(5, thumbnail_url);
+        cs.setString(6, image_url);
         cs.setFloat(7, weight);
-         cs.setString(8, invType);
+        cs.setString(8, invType);
         cs.setString(9, invPartID);
         cs.setString(10, name);
-       
-        
-  
-        
-        
-        
-        
+        cs.setString(11, year.toString());
         cs.execute();
         cs.close();
         
     
+    }
+} catch (SQLException ex) {
+    Logger.getLogger(OracleAPIs.class.getName()).log(Level.SEVERE, null, ex);
+}finally {
+    oracleConnection.closeConnection();
+     System.out.println("Added:"+count_price+" items to PRICE TABLE and, "
+             + count_price_detail+ " items to PRICE_BY_SHOP, connecting to BLink " 
+             + count_connections+ " times");
+}
+}
+
+void setSetsFromParts(String dbQuerryFromItems){
+
+oracleConnection.connect();
+BLAPIs blAPI = new BLAPIs();
+    
+int countFailConnection=0;
+int maxAttemptsToConnect=500;
+int count_price=0;
+int count_price_detail=0;
+int count_connections=0;
+
+ResultSet rs=oracleConnection.sendRequest(dbQuerryFromItems);
+try {
+    while (rs.next()) {
+    count_price++;
+    String invPartID = rs.getString("PART_ID");
+    String invType = rs.getString("TYPE"); 
+    JSONObject json;
+    while(true){
+        json = blAPI.getSuperSets(invPartID, null );
+        count_connections++;
+        if(json.getJSONObject("meta").getInt("code")==200){
+            break;
+        }
+        else if (json.getJSONObject("meta").getInt("code")==404)
+        {
+         System.err.println(json.getJSONObject("meta").toString());
+        }
+        
+        else {
+            countFailConnection++;
+            System.err.println("ALARM"+countFailConnection); 
+            if(countFailConnection==maxAttemptsToConnect) return; 
+        }
+        }
+    JSONArray  data = json.getJSONArray("data");
+    
+    for(int i=0; i<data.length(); i++){
+       //int color_id = data.getJSONObject(i).getInt("color_id");
+       JSONArray sets = data.getJSONObject(i).getJSONArray("entries");
+                
+                for (int j=0; j< sets.length() ; j++){
+                
+                JSONObject set = sets.getJSONObject(j).getJSONObject("item");
+                String  invSetID = set.getString("no");
+                String name = set.getString("name");
+                int category_id = set.getInt("category_id");
+                     
+                CallableStatement cs = oracleConnection.getConnection().
+                prepareCall("{call ITEMS_TAPI.INS(?,?,?,?,?,?,?,?,?,?,?)}");
+                cs.setInt(1, category_id);
+                cs.setString(2,null);
+                cs.setString(3,null);
+                cs.setString(4,null);
+                cs.setString(5,null);
+                cs.setString(6,null);
+                cs.setString(7,null);
+                
+                cs.setString(8, "SET");
+                cs.setString(9, invSetID);
+                cs.setString(10, name);
+                cs.setString(11, null);
+                cs.execute();
+                cs.close();
+                }
+      
+    }    
+   
     }
 } catch (SQLException ex) {
     Logger.getLogger(OracleAPIs.class.getName()).log(Level.SEVERE, null, ex);
