@@ -125,6 +125,16 @@ try {
             if(json.getJSONObject("meta").getInt("code")==200){
                 break;
             }
+            if(json.getJSONObject("meta").getString("message").equals("PARAMETER_MISSING_OR_INVALID"))
+            {
+                break;
+            }
+            
+            if(json.getJSONObject("meta").getString("message").equals("RESOURCE_NOT_FOUND"))
+            {
+                break;
+            }
+            
             else {
 
                 countFailConnection++;
@@ -133,19 +143,17 @@ try {
                 if(countFailConnection==maxAttemptsToConnect)break; 
             }
         }
-        if(countFailConnection==maxAttemptsToConnect)
-        {
-           
-        }
-            JSONObject temp = json.getJSONObject("data");
-            String bl_new_or_used = temp.getString("new_or_used");
-            Float bl_max_price = temp.getFloat("max_price");
-            Float bl_min_price = temp.getFloat("min_price");
-            Float bl_qty_avg_price = temp.getFloat("qty_avg_price");
-            int bl_total_quantity = temp.getInt("total_quantity");
-            Float bl_avg_price = temp.getFloat("avg_price");
-            String bl_currency_code  = temp.getString("currency_code");
-            int bl_unit_quantity  = temp.getInt("unit_quantity");
+        if(json.getJSONObject("meta").getInt("code")==200)
+        {  
+        JSONObject temp = json.getJSONObject("data");
+        String bl_new_or_used = temp.getString("new_or_used");
+        Float bl_max_price = temp.getFloat("max_price");
+        Float bl_min_price = temp.getFloat("min_price");
+        Float bl_qty_avg_price = temp.getFloat("qty_avg_price");
+        int bl_total_quantity = temp.getInt("total_quantity");
+        Float bl_avg_price = temp.getFloat("avg_price");
+        String bl_currency_code  = temp.getString("currency_code");
+        int bl_unit_quantity  = temp.getInt("unit_quantity");
 
 
         //make insert to tha PRICE table tru the procedure INSERT_PRICE            
@@ -193,7 +201,9 @@ try {
                 invIsStocRoom+"\t" +invMyCost+"\t" +invSaleRate+"\t" +invColorID + "PRICE_ID"+vo_PRICE_ID);
         */
     }
-} catch (SQLException ex) {
+    
+}
+}catch (SQLException ex) {
     Logger.getLogger(OracleAPIs.class.getName()).log(Level.SEVERE, null, ex);
 }finally {
     oracleConnection.closeConnection();
@@ -319,7 +329,7 @@ oracleConnection.connect();
 BLAPIs blAPI = new BLAPIs();
     
 int countFailConnection=0;
-int maxAttemptsToConnect=500;
+int maxAttemptsToConnect=5000;
 int count_price=0;
 int count_price_detail=0;
 int count_connections=0;
@@ -358,25 +368,45 @@ try {
     float dim_x  ;
     float dim_y  ;
     float dim_z ;
-    
-    
-    
+    String invType2;
+
     try{
-     name = json.getString("name");
+    name = json.getString("name");
+    }
+    catch (Exception ex){
+        System.err.println("Error przy czytaniu name ");
+        continue;
+    }
     category_id = json.getInt("category_id");
-     image_url = json.getString("image_url");
-     thumbnail_url = json.getString("thumbnail_url");
+     
     weight = json.getFloat("weight");
+    try{
     dim_x = json.getFloat("dim_x");
     dim_y = json.getFloat("dim_y");
     dim_z = json.getFloat("dim_z");
     }
     catch (Exception ex){
-        System.err.println("Error przy czytaniu pól json");
-        
-        continue;
-    
+       dim_x = 0;
+        dim_y = 0;
+        dim_z = 0;
     }
+    invType2 = json.getString("type");
+    try{
+        image_url = json.getString("image_url");
+     }
+    catch (Exception ex){
+        System.err.println("Error przy czytaniu image_url ");
+        image_url = null;
+    }
+    try{
+        thumbnail_url = json.getString("thumbnail_url");
+        
+    }
+    catch (Exception ex){
+        System.err.println("Error przy czytaniu thumbnail_url");
+        thumbnail_url = null;
+    }
+    
     Integer year = new Integer(0);
     if(invType.equals("SET")  )
     {
@@ -393,7 +423,7 @@ try {
         cs.setString(5, thumbnail_url);
         cs.setString(6, image_url);
         cs.setFloat(7, weight);
-        cs.setString(8, invType);
+        cs.setString(8, invType2);
         cs.setString(9, invPartID);
         cs.setString(10, name);
         cs.setString(11, year.toString());
@@ -490,5 +520,76 @@ try {
              + count_connections+ " times");
 }
 }
+void setPartOutSet(String dbQuerryFromItems){
 
+oracleConnection.connect();
+BLAPIs blAPI = new BLAPIs();
+    
+int countFailConnection=0;
+int maxAttemptsToConnect=5000;
+int count_price=0;
+int count_price_detail=0;
+int count_connections=0;
+
+ResultSet rs=oracleConnection.sendRequest(dbQuerryFromItems);
+try {
+    while (rs.next()) {
+    count_price++;
+    String invPartID = rs.getString("PART_ID");
+    String invType = rs.getString("TYPE"); 
+    JSONObject json;
+    while(true){
+        json = blAPI.getSubSets(invPartID, invType );
+        count_connections++;
+        if(json.getJSONObject("meta").getInt("code")==200){
+            break;
+        }
+        else if (json.getJSONObject("meta").getInt("code")==404)
+        {
+         System.err.println(json.getJSONObject("meta").toString());
+        }
+        
+        else {
+            countFailConnection++;
+            System.err.println("ALARM"+countFailConnection); 
+            if(countFailConnection==maxAttemptsToConnect) return; 
+        }
+        }
+    JSONArray  data = json.getJSONArray("data");
+    
+    for(int i=0; i<data.length(); i++){
+            JSONArray entries = data.getJSONObject(i).getJSONArray("entries");
+            for (int j=0; j< entries.length() ; j++)
+            {
+                JSONObject part = entries.getJSONObject(j).getJSONObject("item");
+                    String  invSetID = part.getString("no");
+                int colorID = entries.getJSONObject(j).getInt("color_id");
+                int quantity = entries.getJSONObject(j).getInt("quantity");     
+
+                    System.out.println("com.bricklink.api.example.OracleAPIs.setPartOutSet() " + part.toString());
+
+                CallableStatement cs = oracleConnection.getConnection().
+                prepareCall("{call SUBSETS_tapi.INS(?,?,?,?)}");
+                cs.setString(1,invPartID);
+                cs.setString(2,invSetID);
+                cs.setInt(3,colorID);
+                cs.setInt(4,quantity);
+                cs.execute();
+                cs.close();
+            }
+      
+    }    
+   
+    }
+} catch (SQLException ex) {
+    Logger.getLogger(OracleAPIs.class.getName()).log(Level.SEVERE, null, ex);
+}finally {
+    oracleConnection.closeConnection();
+     System.out.println("Added:"+count_price+" items to PRICE TABLE and, "
+             + count_price_detail+ " items to PRICE_BY_SHOP, connecting to BLink " 
+             + count_connections+ " times");
+}
+
+
+}
 }
