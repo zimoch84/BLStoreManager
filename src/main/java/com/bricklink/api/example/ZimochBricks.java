@@ -20,7 +20,11 @@ public class ZimochBricks {
    public static void main( String[] args ) {
        
      ZimochBricks zb = new ZimochBricks();
+   //zb.setPricesByInventory();
    zb.setPricesByInventory();
+       //BLAPIs bl = new BLAPIs();
+               
+        //       bl.getSubSets("40178-1", "SET");
    }
     
    void refreshInventory()
@@ -39,32 +43,36 @@ void setPricesByInventory()
      //System.err.println(responseItem.toString());
         
 String custom_guide_type= "stock";  //stock or sold
-String custom_new_or_used = "N"; //U-used, N-new
-String custom_country ="";
+String custom_new_or_used = "U"; //U-used, N-new
+String custom_country ="PL";
 String custom_region= "EU";
 
 String dbQuerry1 = "select PART_ID, TYPE, COLOR_ID from inventory i where \n" +
                     "not exists \n" +
                         "(select 1 from price p where p.part_id like i.part_id and p.color_id = i.color_id)\n" ;
 
-String dbQuerry = "select k.PART_ID, k.COLOR_ID , i.type "
+String pricesByKnownColors = "select k.PART_ID, k.COLOR_ID , i.type "
         + "from KNOWNCOLORS  k join ITEMS i on i.PART_ID = k.PART_ID join CATEGORIES c on c.ID = i.CATEGORY_ID\n" +
 "\n" +
 "where not exists (select 1 from PRICE p2 where p2.COLOR_ID = k.COLOR_ID and p2.PART_ID = k.PART_ID)\n" +
 "\n" +
 "and rownum < 20000" ;
 
-String dbQString2 = "select distinct  s.SUBPART_ID as part_id, s.COLOR_ID , \n" +
-"(select type from items i2 where i2.part_id  = s.subpart_id) as type\n" +
-"\n" +
-"\n" +
+String subpartsBySets = "select distinct s.subpart_id as part_id,"
+        + " (select type from items i2 where i2.part_id  = s.subpart_id) as type, s.color_id\n" +
 "from items i join SUBSETS s on s.PART_ID = i.PART_ID\n" +
 "left outer join PRICE p on p.COLOR_ID = s.COLOR_ID  and p.PART_ID = s.SUBPART_ID\n" +
 "where i.type like 'SET' and year_released in ('2017')\n" +
-"and p.AVG_PRICE =0";
+"--and p.country  is null\n" +
+"and p.isvalid = 'Y'\n" +
+"and p.id = (select max(id) from price p2 where p2.part_id = p.part_id and p2.color_id = p.color_id) \n" +
+"and p.AVG_PRICE  = 0";
 
+String sqlSets = "select part_id, type, 0 as color_id from items i\n" +
+"where i.type like 'SET' and i.YEAR_RELEASED in ('2017') ";
+        
 OracleAPIs oracleApis = new OracleAPIs();
-oracleApis.setPricesByQuerry(dbQString2, custom_guide_type, custom_new_or_used, custom_country, custom_region);
+oracleApis.setPricesByQuerry(dbQuerry1, custom_guide_type, custom_new_or_used, custom_country, custom_region);
 }
    
 void getColors()

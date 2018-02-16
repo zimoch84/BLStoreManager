@@ -563,9 +563,13 @@ try {
             {
                 JSONObject part = entries.getJSONObject(j).getJSONObject("item");
                     String  invSetID = part.getString("no");
+                    String type = part.getString("type"); 
                 int colorID = entries.getJSONObject(j).getInt("color_id");
-                int quantity = entries.getJSONObject(j).getInt("quantity");     
-
+                int quantity = entries.getJSONObject(j).getInt("quantity");
+                boolean isAlter = entries.getJSONObject(j).getBoolean("is_alternate");
+                boolean isCounterpart =entries.getJSONObject(j).getBoolean("is_counterpart");
+                
+                
                     System.out.println("com.bricklink.api.example.OracleAPIs.setPartOutSet() " + part.toString());
 
                 CallableStatement cs = oracleConnection.getConnection().
@@ -574,6 +578,9 @@ try {
                 cs.setString(2,invSetID);
                 cs.setInt(3,colorID);
                 cs.setInt(4,quantity);
+                cs.setString(5, type);
+                cs.setString(6, (isAlter ? "Y" : "N"));
+                cs.setString(7, (isCounterpart ? "Y" : "N"));
                 cs.execute();
                 cs.close();
             }

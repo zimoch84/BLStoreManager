@@ -71,7 +71,10 @@ JSONObject brickLinkApiItem(String type, String partNo, String color_id, String 
         auth.parameters.put("color_id", color_id);
         auth.parameters.put("guide_type", guide_type);
         auth.parameters.put("new_or_used", new_or_used);
+        auth.parameters.put("vat", "Y");
+        if(!country_code.equals(""))
         auth.parameters.put("country_code", country_code);
+        if(!region.equals(""))
         auth.parameters.put("region", region);
         
         try {
