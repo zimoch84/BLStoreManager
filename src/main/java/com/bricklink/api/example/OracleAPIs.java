@@ -33,6 +33,26 @@ public OracleAPIs() {
 void refreshInventoryDatabase(JSONObject json){
         oracleConnection.connect();
     
+        //Update inventory to ser new
+        
+        String updatequery = "UPDATE BARTEK.INVENTORY set isvalid = 'N' , dto=sysdate"   ;
+            try {
+                        
+          
+                PreparedStatement ps = oracleConnection.getConnection().prepareStatement(updatequery);
+                             
+                System.out.println("com.bricklink.api.example.OracleAPIs.refreshInventoryDatabase() update inventory" );
+                ps.execute();
+                ps.close();
+            }
+            catch(SQLException
+                    s)
+            {
+                System.out.println("com.bricklink.api.example.OracleAPIs.refreshInventoryDatabase()" + s) ;
+                   
+            }
+            
+        
         for(int i=0; i<json.getJSONArray("data").length(); i++){
             int inventory_id = json.getJSONArray("data").getJSONObject(i).getInt("inventory_id");
                 String part_id = json.getJSONArray("data").getJSONObject(i).getJSONObject("item").getString("no");
@@ -566,14 +586,24 @@ try {
                     String type = part.getString("type"); 
                 int colorID = entries.getJSONObject(j).getInt("color_id");
                 int quantity = entries.getJSONObject(j).getInt("quantity");
+              
                 boolean isAlter = entries.getJSONObject(j).getBoolean("is_alternate");
                 boolean isCounterpart =entries.getJSONObject(j).getBoolean("is_counterpart");
+                int extra_quantity =entries.getJSONObject(j).getInt("extra_quantity");
                 
-                
-                    System.out.println("com.bricklink.api.example.OracleAPIs.setPartOutSet() " + part.toString());
+                /*
+                System.out.println("invPartID " + invPartID) ;
+                System.out.println("invSetID " + invSetID) ;
+                System.out.println("colorID " + colorID) ;
+                System.out.println("quantity " + quantity) ;
+                System.out.println("type " + type) ;
+                System.out.println("isAlter " + (isAlter ? "Y" : "N")) ;
+                System.out.println("isCounterpart " + (isCounterpart ? "Y" : "N")) ;
+                System.out.println("extra_quantity " + extra_quantity) ;
+                  */              
 
                 CallableStatement cs = oracleConnection.getConnection().
-                prepareCall("{call SUBSETS_tapi.INS(?,?,?,?)}");
+                prepareCall("{call SUBSETS_tapi.INS(?,?,?,?,?,?,?,?)}");
                 cs.setString(1,invPartID);
                 cs.setString(2,invSetID);
                 cs.setInt(3,colorID);
@@ -581,6 +611,7 @@ try {
                 cs.setString(5, type);
                 cs.setString(6, (isAlter ? "Y" : "N"));
                 cs.setString(7, (isCounterpart ? "Y" : "N"));
+                cs.setInt(8, extra_quantity);
                 cs.execute();
                 cs.close();
             }
@@ -592,9 +623,7 @@ try {
     Logger.getLogger(OracleAPIs.class.getName()).log(Level.SEVERE, null, ex);
 }finally {
     oracleConnection.closeConnection();
-     System.out.println("Added:"+count_price+" items to PRICE TABLE and, "
-             + count_price_detail+ " items to PRICE_BY_SHOP, connecting to BLink " 
-             + count_connections+ " times");
+     System.out.println("Added:"+count_price);
 }
 
 

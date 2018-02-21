@@ -20,8 +20,8 @@ public class ZimochBricks {
    public static void main( String[] args ) {
        
      ZimochBricks zb = new ZimochBricks();
-   //zb.setPricesByInventory();
-   zb.setPricesByInventory();
+   zb.refreshInventory();
+  // zb.setPricesByInventory();
        //BLAPIs bl = new BLAPIs();
                
         //       bl.getSubSets("40178-1", "SET");
@@ -44,10 +44,10 @@ void setPricesByInventory()
         
 String custom_guide_type= "stock";  //stock or sold
 String custom_new_or_used = "U"; //U-used, N-new
-String custom_country ="PL";
-String custom_region= "EU";
+String custom_country ="";
+String custom_region= "";
 
-String dbQuerry1 = "select PART_ID, TYPE, COLOR_ID from inventory i where \n" +
+String priceInventory = "select PART_ID, TYPE, COLOR_ID from inventory i where \n" +
                     "not exists \n" +
                         "(select 1 from price p where p.part_id like i.part_id and p.color_id = i.color_id)\n" ;
 
@@ -60,7 +60,7 @@ String pricesByKnownColors = "select k.PART_ID, k.COLOR_ID , i.type "
 
 String subpartsBySets = "select distinct s.subpart_id as part_id,"
         + " (select type from items i2 where i2.part_id  = s.subpart_id) as type, s.color_id\n" +
-"from items i join SUBSETS s on s.PART_ID = i.PART_ID\n" +
+"from items i join SUBSETS s on s.PART_ID = i.PART_ID\n " +
 "left outer join PRICE p on p.COLOR_ID = s.COLOR_ID  and p.PART_ID = s.SUBPART_ID\n" +
 "where i.type like 'SET' and year_released in ('2017')\n" +
 "--and p.country  is null\n" +
@@ -69,10 +69,12 @@ String subpartsBySets = "select distinct s.subpart_id as part_id,"
 "and p.AVG_PRICE  = 0";
 
 String sqlSets = "select part_id, type, 0 as color_id from items i\n" +
-"where i.type like 'SET' and i.YEAR_RELEASED in ('2017') ";
+"where i.type like 'SET' and i.YEAR_RELEASED in ('2017')"
+        + "and exists (select 1 from price p2 where p2.part_ID = i.part_id  and p2.avg_price = 0)"
+        + " ";
         
 OracleAPIs oracleApis = new OracleAPIs();
-oracleApis.setPricesByQuerry(dbQuerry1, custom_guide_type, custom_new_or_used, custom_country, custom_region);
+oracleApis.setPricesByQuerry(sqlSets, custom_guide_type, custom_new_or_used, custom_country, custom_region);
 }
    
 void getColors()
@@ -152,12 +154,12 @@ String querySelectItems = "select distinct part_id, type from items i where 1=1"
     BLAPIs api = new BLAPIs();
    api.getSubSets("6392-1", "SET");
    OracleAPIs oApi = new OracleAPIs();
-     String querySelectItems = "select distinct part_id, type from items i where 1=1"
-             +"and type = 'SET'"
-             + "and part_id like '%-%'"
-               +"and part_id not in ('LMI2-DE' , 'LMI1-DE')"
-             + "and rownum < 5000"
-             + "and not exists (select 1 from subsets s where s.part_id = i.part_id)";
+     String querySelectItems = "select distinct part_id, type from items i where 1=1\n" +
+"             and type = 'SET'\n" +
+"              and part_id like '%-%'\n" +
+"               and part_id not in ('LMI2-DE' , 'LMI1-DE')\n" +
+    
+"              and i.YEAR_RELEASED in ( '2015', '2014')";
     
      
     oApi.setPartOutSet(querySelectItems);
