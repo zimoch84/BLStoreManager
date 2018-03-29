@@ -42,8 +42,8 @@ public class BLAuth {
         
                 String consumerKey = "E5850ABFAC43423E80FADEB085F2329B";
 		String consumerSecret = "4C6D415EBFE64FA78E8C12077C29ACD9";
-		String tokenValue = "85AC07FFAE8342ADAF052BD508A0D841";
-		String tokenSecret = "91B1A05B2DB6432EA4299F341C3AA194";
+		String tokenValue = "D4FC2D391E9D4BFD868C07325D81D9F2";
+		String tokenSecret = "90D65A638DA644EFABC679BF306D4DEA";
 
 		BLAuthSigner signer = new BLAuthSigner( consumerKey, consumerSecret );
 		signer.setToken( tokenValue, tokenSecret );

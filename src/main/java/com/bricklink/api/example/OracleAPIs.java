@@ -202,16 +202,27 @@ try {
             //getPriceArray and set it in PRICE_BY_SHOP
 
             JSONArray price_detail = temp.getJSONArray("price_detail");
+            int detailQuantity;
+            float unit_price;
+            
+            
             for(int i=0; i<price_detail.length(); i++){
                 count_price_detail++;
-            cs = oracleConnection.getConnection().prepareCall("{call INSERT_PRICE_BY_SHOP(?,?,?,?,?,?,?)}");//7in 
+                
+             detailQuantity = price_detail.getJSONObject(i).getInt("quantity");
+             unit_price = price_detail.getJSONObject(i).getFloat("unit_price");
+            cs = oracleConnection.getConnection().prepareCall("{call INSERT_PRICE_BY_SHOP(?,?,?,?,?,?,?,?,?)}");//7in 
             cs.setString(1, invPartID);
             cs.setFloat(2, invColorID);
             cs.setString(3, custom_country);
             cs.setString(4, custom_region);
             cs.setString(5, custom_new_or_used);
             cs.setString(6, custom_guide_type);
-            cs.setFloat(7, vo_PRICE_ID);
+            cs.setInt(7, detailQuantity);
+            cs.setFloat(8, unit_price);
+            cs.setFloat(9, vo_PRICE_ID);
+            
+           
             cs.execute(); 
             cs.close();
                     }            
