@@ -19,10 +19,7 @@ public class BLAuth {
         
     }
         
-        
-    
-       
-    
+  
         String baseUrl= "";
 
         public String getBaseUrl() {

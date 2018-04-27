@@ -21,8 +21,9 @@ public class ZimochBricks {
        
      ZimochBricks zb = new ZimochBricks();
    
- //zb.refreshInventory();
-   zb.setPricesByInventory();
+// zb.refreshInventory();
+ // zb.setPricesByInventory();
+ zb.setPricesByNewInventory();
     //zb.getItems();
  // zb.setPricesByInventory();
        //BLAPIs bl = new BLAPIs();
@@ -46,11 +47,11 @@ void setPricesByInventory()
      //System.err.println(responseItem.toString());
         
 String custom_guide_type= "stock";  //stock or sold
-String custom_new_or_used = ""; //U-used, N-new can be null
+String custom_new_or_used = "N"; //U-used, N-new can be null
 String custom_country ="PL"; 
 String custom_region= "EU";
 
-String priceInventory = "select PART_ID, TYPE, COLOR_ID from inventory i where  i.DATE_CREATED > sysdate - 1  and i.ISVALID = 'Y' \n" ;
+String priceInventory = "select PART_ID, TYPE, COLOR_ID from inventory i where  i.DATE_CREATED >= sysdate - 1  and i.ISVALID = 'Y' and unit_price = 4 \n" ;
                  //  "not exists (select 1 from price p where p.part_id like i.part_id and p.color_id = i.color_id and country = 'PL' and region = 'EU' and new_or_used='N' )" ;
 
 String pricesByKnownColors = "select k.PART_ID, k.COLOR_ID , i.type "
@@ -86,6 +87,37 @@ String onePart = "select i.part_id, type, kk.color_id color_id from items i join
 OracleAPIs oracleApis = new OracleAPIs();
 oracleApis.setPricesByQuerry(priceInventory, custom_guide_type, custom_new_or_used, custom_country, custom_region);
 }
+
+
+void setPricesByNewInventory()
+{
+        
+String custom_guide_type= "stock";  //stock or sold
+String custom_new_or_used = "N"; //U-used, N-new can be null
+String custom_country ="PL"; 
+String custom_region= "EU";
+
+String priceInventory = "select PART_ID, TYPE, COLOR_ID from inventory i where  i.DATE_CREATED >= sysdate - 1  and i.ISVALID = 'Y' and unit_price = 4 \n" ;
+
+OracleAPIs oracleApis = new OracleAPIs();
+oracleApis.setPricesByQuerry(priceInventory, custom_guide_type, custom_new_or_used, custom_country, custom_region);
+
+custom_new_or_used = "U";
+oracleApis.setPricesByQuerry(priceInventory, custom_guide_type, custom_new_or_used, custom_country, custom_region);
+
+custom_new_or_used = "U"; 
+custom_country =""; 
+custom_region= "EU";
+oracleApis.setPricesByQuerry(priceInventory, custom_guide_type, custom_new_or_used, custom_country, custom_region);
+
+custom_new_or_used = "N"; 
+custom_country =""; 
+custom_region= "EU";
+oracleApis.setPricesByQuerry(priceInventory, custom_guide_type, custom_new_or_used, custom_country, custom_region);
+
+
+}
+
    
 void getColors()
            
