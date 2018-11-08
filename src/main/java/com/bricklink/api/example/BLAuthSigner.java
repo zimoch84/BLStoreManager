@@ -82,8 +82,6 @@ public class BLAuthSigner {
 		addOAuthParameter( OAuthConstants.SIGN_METHOD, signMethod );
 
 		String baseString = getBaseString();
-                System.err.println("baseString " + baseString);
-                
 		String keyString = OAuthEncoder.encode( consumerSecret ) + '&' + OAuthEncoder.encode( tokenSecret );
 		String signature = doSign( baseString, keyString );
 		return signature;

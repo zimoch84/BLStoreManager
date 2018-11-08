@@ -39,7 +39,7 @@ public class OracleConnection {
          try {
 
             connection = DriverManager.getConnection(
-                    "jdbc:oracle:thin:@localhost:1521:xe", "BARTEK", "Sabina17");
+                    "jdbc:oracle:thin:@localhost:1521:xe", "BARTEK", "Sabina18");
 
         } catch (SQLException e) {
 
