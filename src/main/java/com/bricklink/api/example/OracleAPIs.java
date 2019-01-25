@@ -24,11 +24,19 @@ import org.json.JSONObject;
 public class OracleAPIs {
     OracleConnection oracleConnection;
     BLAPIs blAPI;
+    boolean debug = false;
     
 public OracleAPIs() {
     this.oracleConnection =   new OracleConnection();
     this.blAPI = new BLAPIs();
 }
+
+    public OracleAPIs(boolean debug) {
+        this.debug = debug;
+        this.oracleConnection =   new OracleConnection();
+        this.blAPI = new BLAPIs(debug);
+    }
+
 
 
 void refreshInventoryDatabase(){
@@ -184,7 +192,8 @@ try {
                  unit_price = price_detail.getJSONObject(i).getFloat("unit_price");
                  if(custom_guide_type.equals("sold") ){
                     try {
-                    date_ordered_date = new java.sql.Date(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").parse(date_ordered).getTime());
+                    date_ordered = price_detail.getJSONObject(i).getString("date_ordered");    
+                    date_ordered_date = new java.sql.Date(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").parse(date_ordered).getTime());
                     seller_country_code = price_detail.getJSONObject(i).getString("seller_country_code");
                     buyer_country_code = price_detail.getJSONObject(i).getString("buyer_country_code");
                     

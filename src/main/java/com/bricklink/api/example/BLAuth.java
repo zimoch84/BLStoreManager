@@ -25,6 +25,20 @@ String baseUrl= "";
 public String getBaseUrl() {
     return  baseUrl;
 }
+void clearParameters(){
+
+    parameters.clear();
+}
+
+public String getBaseUrlWIthParams(){
+
+String paramUrl = "";
+    for (Map.Entry<String, String> entry : parameters.entrySet())
+            {
+                paramUrl += entry.getKey() +"="+ entry.getValue()+"&";
+            }
+return getBaseUrl() + "/" + paramUrl;
+}
 
 public void setBaseUrl(String baseUrl) {
     this.baseUrl = baseUrl;

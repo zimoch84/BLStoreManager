@@ -18,15 +18,24 @@ import org.json.JSONObject;
  */
 public class BLAPIs {
     
+ boolean debug = false;
  BLAuth auth ;
 
+ 
     public BLAPIs() {
         auth= new BLAuth();   
     }
+
+    public BLAPIs(boolean debug) {
+         auth= new BLAuth();   
+         this.debug = debug;
+    }
+    
  
 JSONObject doRequest()    {
 
-    System.out.println(auth.getBaseUrl());
+    
+    System.out.println(auth.getBaseUrlWIthParams());
     
     int countFailConnection=0;
     int maxAttemptsToConnect=500;
@@ -45,6 +54,10 @@ JSONObject doRequest()    {
             }
         rd.close();
         JSONObject json = new JSONObject(response.toString());
+        
+        if(debug)
+                System.out.println(json);
+        
         httpConnection.disconnect();
 
         if(json.getJSONObject("meta").getInt("code")==200){
@@ -126,6 +139,7 @@ JSONObject getSubSets(String part_id, String type)
  
 JSONObject getItemPrice(String type, String partNo, String color_id, String guide_type, String new_or_used, String country_code, String region ){
      
+    auth.clearParameters();
     auth.setBaseUrl("https://api.bricklink.com/api/store/v1/items/"+type+"/"+partNo+"/price");//+"?"+"color_id="+color_id+"&guide_type="+guide_type+"&new_or_used="+new_or_used+"&country_code="+country_code+"&region="+region);
     auth.parameters.put("color_id", color_id);
     auth.parameters.put("guide_type", guide_type);

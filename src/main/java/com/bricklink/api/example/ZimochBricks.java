@@ -6,6 +6,8 @@
 package com.bricklink.api.example;
 
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import org.json.JSONObject;
 
 
@@ -29,6 +31,17 @@ public class ZimochBricks {
       
 public static void main( String[] args ) {
        
+    /*
+SimpleDateFormat ss =   new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+ try{
+
+System.out.println(ss.parse("2018-05-17T17:04:19.920Z").getTime());
+ }
+ catch(ParseException x){
+ 
+     System.out.println("blad");
+ }
+    */
 ZimochBricks zb = new ZimochBricks();
    //
 //9984
@@ -39,15 +52,17 @@ zb.setPrices();
 //zb.setPricesFromSubsets();
 //zb.setPrices();
 //zb.setPricesByNewInventory();
-    //zb.getItems();
+ // zb.setPricesFromSubsets();
  // zb.setPricesByInventory();
  
+ /*
  
- 
-  //  BLAPIs bl = new BLAPIs();
-               
+BLAPIs bl = new BLAPIs(true);
     
-   //  System.out.println( bl.getItemPrice("PART", "48729b", "86", "sold", "U", "PL", "EU"));
+bl.getItemPrice("SET", "76067-1", String.valueOf(0), "stock", "N", "", "EU");
+   */            
+    
+//System.out.println( zb.blApi.getItemPrice("PART", "71040stk01a", "0", "stock", "N", "", "EU"));
    }
     
 void refreshInventory()
@@ -62,17 +77,7 @@ String subpartsBySets = "select distinct s.subpart_id as part_id, s.color_id , i
 "from items i join SUBSETS s on s.subpart_id = i.PART_ID and s.iscounterpart = 'N' \n" +
 "and s.isalternate = 'N' \n" +
 "where 1=1\n" +
-"and s.part_id in ('21136-1',\n" +
-"'21310-1',\n" +
-"'10255-1',\n" +
-"'79018-1',\n" +
-"'10251-1',\n" +
-"'10241-1',\n" +
-"'70612-1',\n" +
-"'21030-1',\n" +
-"'76085-1',\n" +
-"'75060-1',\n" +
-"'70620-1',\n" +
+"and s.part_id in ('8448-1',\n" +
 "'21028-1')";
 setAllPrices(subpartsBySets);
 }
@@ -116,12 +121,12 @@ String subpartsBySets = "select  distinct subs.subpart_id as part_id ,subs.type 
 "join subsets subs on subs.PART_ID = sts.part_id\n" +
 "where sts.type = 'SET' \n" +
 "and sts.YEAR_RELEASED in ( '2015', '2016', '2017', '2018' ) \n" +
-"and subs.ISCOUNTERPART = 'N'\n" +
-"and not exists(select 1 from price p where p.part_id = subs.subpart_id and p.color_id = subs.color_id)";
+"and subs.ISCOUNTERPART = 'N'\n" ;
+//+"and not exists(select 1 from price p where p.part_id = subs.subpart_id and p.color_id = subs.color_id and p.country = 'PL')";
 
-String sqlSets = "select part_id, type, 0 as color_id from items i  \n" +
-"where i.type like 'SET'  \n" +
-"and not exists (select 1 from price p3 where p3.part_ID = i.part_id)"
+String sqlSets = "select part_id, type, 0 as color_id from items i   \n" +
+"where i.type like 'SET' \n" +
+"and TO_NUMBER(I.YEAR_RELEASED) >  2000"
  ;
      
 String sqlByType = "select i.part_id , i.type , kc.COLOR_ID from items i join CATEGORIES c on c.ID = i.category_id join KNOWNCOLORS kc on kc.part_id = i.part_id where c.name in ('Brick','Plate')";
@@ -135,10 +140,29 @@ String updateInventory = "select i.part_id, type, i.color_id color_id from inven
 "'Brick','Brick, Arch','Brick, Modified','Brick, Round','Plate','Plate, Modified','Plate, Round','Slope','Slope, Inverted','Slope, Decorated','Wedge')\n" +
 "and i.isvalid = 'Y'";
 
+String missingPrices = "select  distinct s.subpart_id as part_id, s.type \n" +
+", s.color_id\n" +
+"from subsets s \n" +
+"join items i on s.part_id = i.part_id \n" +
+"\n" +
+"where \n" +
+"i.type like 'SET' \n" +
+"and to_number(i.YEAR_RELEASED) between 2010 and 2014 \n" +
+"and not exists(\n" +
+"select 1 from price p where p.part_id = s.subpart_id and p.color_id = s.COLOR_ID \n" +
+"and p.new_or_used = 'N'\n" +
+"and p.isvalid = 'Y'\n" +
+"and p.guide_type= 'stock'\n" +
+"\n" +
+") ";
+
 //OracleAPIs oracleApis = new OracleAPIs();
 //oracleApis.setPricesByQuerry(updateInventory, custom_guide_type, custom_new_or_used, custom_country, custom_region);
 
-setAllPrices(subpartsBySets);
+//setAllPrices(sqlSets);
+
+setPricesByCondition(sqlSets, "stock", "N", "EU", "");
+
 }
 
 
@@ -151,14 +175,14 @@ String custom_region= "EU";
 
 
 OracleAPIs oracleApis = new OracleAPIs();
-oracleApis.setPricesByQuerry(querry, custom_guide_type, custom_new_or_used, custom_country, custom_region);
+//oracleApis.setPricesByQuerry(querry, custom_guide_type, custom_new_or_used, custom_country, custom_region);
 
-custom_new_or_used = "U";
+custom_new_or_used = "N";
 oracleApis.setPricesByQuerry(querry, custom_guide_type, custom_new_or_used, custom_country, custom_region);
 
 custom_new_or_used = "U"; 
 custom_country =""; 
-custom_region= "EU";
+custom_region= "EU";    
 oracleApis.setPricesByQuerry(querry, custom_guide_type, custom_new_or_used, custom_country, custom_region);
 
 custom_new_or_used = "N"; 
@@ -167,6 +191,12 @@ custom_region= "EU";
 oracleApis.setPricesByQuerry(querry, custom_guide_type, custom_new_or_used, custom_country, custom_region);
 
 
+}
+
+
+void setPricesByCondition(String querry, String guide_type, String new_or_used, String region , String country){
+    OracleAPIs oracleApis = new OracleAPIs();
+    oracleApis.setPricesByQuerry(querry, guide_type, new_or_used, region, country);
 }
 
 void setPricesByNewInventory()
@@ -238,14 +268,14 @@ oApi.setSetsFromParts(querySelectItems);
 }
 void getSubSets(){
 String querySelectItems = "select distinct part_id, type from items i where 1=1\n" +
- "             and type = 'SET'\n" +
+"             and type = 'SET'\n" +
 "              and part_id like '%-%'\n" +
-"              and part_id not in ('LMI2-DE' , 'LMI1-DE')\n" +
-"              and i.YEAR_RELEASED in ( '2017', '2018')";
+"             and part_id not in ('LMI2-DE' , 'LMI1-DE')\n" +
+"and not exists (select 1 from subsets s where s.part_id = i.part_id) ";
 oApi.setPartOutSet(querySelectItems);
 }
 
-void getNewParts(){
+void getNewPartsDefinition(){
 
 String querySelectItems = "select distinct part_id, type from items i  join categories c on c.ID = i.CATEGORY_ID where 1=1 and type in 'PART'\n" +
 "and c.name in ('Plate' ,'Tile', 'Brick', 'Slope') \n" +
@@ -263,7 +293,7 @@ querySelectItems = "select distinct part_id, type from items i where 1=1\n" +
  "             and type = 'SET'\n" +
 "              and part_id like '%-%'\n" +
 "              and part_id not in ('LMI2-DE' , 'LMI1-DE')\n" +
-"              and i.YEAR_RELEASED in ( '2017', '2018')";
+"              and i.YEAR_RELEASED in ( '2017', '2018', '2019')";
 System.out.println("Parting out new sets");     
 oApi.setPartOutSet(querySelectItems);
 
