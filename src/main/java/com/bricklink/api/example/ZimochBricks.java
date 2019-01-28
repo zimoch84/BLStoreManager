@@ -6,8 +6,6 @@
 package com.bricklink.api.example;
 
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import org.json.JSONObject;
 
 
@@ -42,12 +40,18 @@ System.out.println(ss.parse("2018-05-17T17:04:19.920Z").getTime());
      System.out.println("blad");
  }
     */
-ZimochBricks zb = new ZimochBricks();
+    MSSQLConnection connection = new MSSQLConnection();
+    
+    connection.connect();
+    connection.disconnect();
+    
+    
+//ZimochBricks zb = new ZimochBricks();
    //
 //9984
 
 //zb.getNewParts();
-zb.setPrices();
+//zb.setPrices();
 //zb.refreshInventory();
 //zb.setPricesFromSubsets();
 //zb.setPrices();
